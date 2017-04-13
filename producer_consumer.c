@@ -1,5 +1,7 @@
 #include "producer_consumer.h"
 
+int next_id = 0;
+
 void fatal_error(char *error_str) {
 	printf(error_str);
 	exit(-1);
@@ -96,7 +98,7 @@ void push_buffer(SyncBuffer* buf, Item *item) {
 
 		capture_error(pthread_mutex_lock(buf->mutex));
 		
-		buf->buffer[buffer->buffer_len] = *item;
+		buf->buffer[buf->buffer_len] = *item;
 		buf->buffer_len++;
 
 		capture_error(pthread_mutex_unlock(buf->mutex));
@@ -105,23 +107,25 @@ void push_buffer(SyncBuffer* buf, Item *item) {
 
 void produce_item(SyncBuffer *buf) {
 	while(1) {
-		if (buffer_len != BUF_MAX_LEN) {
+		if (buf->buffer_len != BUF_MAX_LEN) {
 			//wait 3-7 seconds before producing an item
-			int32_t rand_sleep_value = ...;
+			int32_t rand_sleep_value = (gen_rdrand() % 4)+3;
+			sleep(rand_sleep_value);
 
-			push_buffer()
+			Item item = gen_item();
+			push_buffer(buf, &item);
 		}
 	}
 }
 
-void consume_item() {
+void consume_item(SyncBuffer *buf) {
 	while(1) {
-		if (buffer_len != 0) {
+		if (buf->buffer_len != 0) {
 			//remove an item from the buffer
-			pop_buffer()
+			pop_buffer(buf);
 
 			//decrement buffer length
-			unlock_mutex(buffer_mutex);
+			pthread_mutex_unlock(buf->mutex);
 			break;
 		}
 	}
@@ -131,7 +135,7 @@ Item gen_item() {
 	Item item;
 	item.Id = next_id;
 	next_id++;
-	item.wait = gen_rand();
+	item.WaitTime = gen_rdrand();
 }
 
 int32_t gen_rdrand() {
