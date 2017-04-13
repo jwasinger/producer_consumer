@@ -1,49 +1,146 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <pthread.h>
+#include "producer_consumer.h"
 
-#include "mt.h"
-
-struct args{
-	long tid;
-	long sleep_time;
-};
-
-void *hello(void *tid)
-{
-	struct args *a = (struct args*)tid;
-	sleep(a->sleep_time);
-	return (void*)printf("Hello from thread %ld! I did %ld units of work!\n", a->tid, a->sleep_time);
+void fatal_error(char *error_str) {
+	printf(error_str);
+	exit(-1);
 }
 
-int main(int argc, char **argv)
-{
-	unsigned long init[4] = {0x123, 0x234, 0x345, 0x456};
-	unsigned long length = 4;
-	//init_by_array(init, length);
 
+int get_rdrand_support() {
+	unsigned int eax;
+	unsigned int ebx;
+	unsigned int ecx;
+	unsigned int edx;
 
-	pthread_t threads[atoi(argv[1])];
-	struct args a[atoi(argv[1])];
-
-	for(long i = 0; i < atoi(argv[1]); ++i){
-
-		/* int pthread_create(pthread_t *thread, const pthread_attr_t *attr, */
-		/*                    void *(*start_routine) (void *), void *arg); */
-
-		a[i].tid = i;
-		a[i].sleep_time = 1;
-
-		pthread_create(&(threads[i]),
-		               NULL,
-		               hello,
-		               (void*)&a[i]);
-	}
-
-	for(long i = 0; i < atoi(argv[1]); ++i){
-		pthread_join(threads[i], NULL);
-	}
+	char vendor[13];
 	
+	eax = 0x01;
+
+	__asm__ __volatile__(
+	                     "cpuid;"
+	                     : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+	                     : "a"(eax)
+	                     );
+	
+	if(ecx & 0x40000000){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+/*
+ * TODO: make threadsafe
+ */
+void capture_error(int ret) {
+  int errno_saved = errno;
+  fprintf(stderr, "An error occurred!");
+  fprintf(stderr, "The error value is %d\n", errno_saved);
+	exit(-1);
+}
+
+void fail_if_error(int ret) {
+	if (ret != 0) {
+		exit(-1);
+	}
+}
+
+int init_sync_buffer(SyncBuffer** rw_buf) {
+	int ret = 0;
+
+	SyncBuffer *new_buf = malloc(sizeof(SyncBuffer));
+	if (new_buf == NULL) {
+		fatal_error("...");
+	}
+
+	new_buf->buffer = malloc(sizeof(BUF_MAX_LEN));
+	if (new_buf->buffer == NULL) {
+		fatal_error("...");
+	}
+
+	new_buf->buffer_len = 0;
+
+	ret = pthread_mutex_init(new_buf->mutex, NULL);
+	if(ret != 0) {
+		fatal_error("...");
+	}
+
+	*rw_buf = new_buf;
 	return 0;
+}
+
+void pop_buffer(SyncBuffer* buf) {
+	int ret = 0;
+
+	if (buf->buffer_len == 0) {
+		return;
+	}
+
+	ret = pthread_mutex_lock(buf->mutex);
+	
+	buf->buffer_len--;
+
+	ret = pthread_mutex_unlock(buf->mutex);
+}
+
+void push_buffer(SyncBuffer* buf, Item *item) {
+	if (buf->buffer_len == BUF_MAX_LEN) {
+		return;
+	}
+
+	while(1) {
+		if (buf->buffer_len == BUF_MAX_LEN) {
+			continue;
+		}
+
+		capture_error(pthread_mutex_lock(buf->mutex));
+		
+		buf->buffer[buffer->buffer_len] = *item;
+		buf->buffer_len++;
+
+		capture_error(pthread_mutex_unlock(buf->mutex));
+	}
+}
+
+void produce_item(SyncBuffer *buf) {
+	while(1) {
+		if (buffer_len != BUF_MAX_LEN) {
+			//wait 3-7 seconds before producing an item
+			int32_t rand_sleep_value = ...;
+
+			push_buffer()
+		}
+	}
+}
+
+void consume_item() {
+	while(1) {
+		if (buffer_len != 0) {
+			//remove an item from the buffer
+			pop_buffer()
+
+			//decrement buffer length
+			unlock_mutex(buffer_mutex);
+			break;
+		}
+	}
+}
+
+Item gen_item() {
+	Item item;
+	item.Id = next_id;
+	next_id++;
+	item.wait = gen_rand();
+}
+
+int32_t gen_rdrand() {
+	if(get_rdrand_support() != 0) {
+		int result;
+		_rdrand32_step(&result);
+		return result;
+	} else {
+		printf("rdrand not supported\n");
+		exit(-1);
+	}
 }
