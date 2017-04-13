@@ -19,7 +19,7 @@ typedef struct {
 typedef struct {
 	Item *buffer;
 	int	buffer_len;
-	pthread_mutex_t *mutex;
+	pthread_mutex_t mutex;
 } SyncBuffer;
 
 //void pop_buffer(struct *SyncBuffer buf);

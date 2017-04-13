@@ -36,10 +36,12 @@ int get_rdrand_support() {
  * TODO: make threadsafe
  */
 void capture_error(int ret) {
-  int errno_saved = errno;
-  fprintf(stderr, "An error occurred!");
-  fprintf(stderr, "The error value is %d\n", errno_saved);
-	exit(-1);
+	if(ret != 0) {
+		int errno_saved = errno;
+		fprintf(stderr, "An error occurred!");
+		fprintf(stderr, "The error value is %d\n", errno_saved);
+		exit(-1);
+	}
 }
 
 void fail_if_error(int ret) {
@@ -63,7 +65,7 @@ int init_sync_buffer(SyncBuffer** rw_buf) {
 
 	new_buf->buffer_len = 0;
 
-	ret = pthread_mutex_init(new_buf->mutex, NULL);
+	ret = pthread_mutex_init(&(new_buf->mutex), NULL);
 	if(ret != 0) {
 		fatal_error("...");
 	}
@@ -79,11 +81,11 @@ void pop_buffer(SyncBuffer* buf) {
 		return;
 	}
 
-	ret = pthread_mutex_lock(buf->mutex);
+	ret = pthread_mutex_lock(&(buf->mutex));
 	
 	buf->buffer_len--;
 
-	ret = pthread_mutex_unlock(buf->mutex);
+	ret = pthread_mutex_unlock(&(buf->mutex));
 }
 
 void push_buffer(SyncBuffer* buf, Item *item) {
@@ -96,12 +98,13 @@ void push_buffer(SyncBuffer* buf, Item *item) {
 			continue;
 		}
 
-		capture_error(pthread_mutex_lock(buf->mutex));
+		capture_error(pthread_mutex_lock(&(buf->mutex)));
 		
 		buf->buffer[buf->buffer_len] = *item;
 		buf->buffer_len++;
 
-		capture_error(pthread_mutex_unlock(buf->mutex));
+		capture_error(pthread_mutex_unlock(&(buf->mutex)));
+		break;
 	}
 }
 
@@ -114,6 +117,8 @@ void produce_item(SyncBuffer *buf) {
 
 			Item item = gen_item();
 			push_buffer(buf, &item);
+
+			printf("item produced\n");
 		}
 	}
 }
@@ -124,8 +129,10 @@ void consume_item(SyncBuffer *buf) {
 			//remove an item from the buffer
 			pop_buffer(buf);
 
+			printf("item consumed\n");
+
 			//decrement buffer length
-			pthread_mutex_unlock(buf->mutex);
+			pthread_mutex_unlock(&(buf->mutex));
 			break;
 		}
 	}
