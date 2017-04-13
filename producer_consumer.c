@@ -151,7 +151,6 @@ int32_t gen_rdrand() {
 		_rdrand32_step(&result);
 		return result;
 	} else {
-		printf("rdrand not supported\n");
-		exit(-1);
+		return (int32_t)genrand_int32();
 	}
 }

@@ -11,6 +11,8 @@
 #include<stdint.h>
 #include<x86intrin.h>
 
+#include "genrand.h"
+
 typedef struct {
 	int Id;
 	int WaitTime;
