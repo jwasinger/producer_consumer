@@ -1,7 +1,7 @@
 #ifndef PRODUCER_CONSUMER_H
 #define PRODUCER_CONSUMER_H
 
-#define BUF_MAX_LEN 20
+#define BUF_MAX_LEN 30
 
 #include<stdio.h>
 #include<unistd.h>
@@ -18,15 +18,15 @@ typedef struct {
 	int WaitTime;
 } Item;
 
+/*
+ * SyncBuffer is a structure which implements the functionality of a threadsafe stack in the context of the producer consumer problem:
+ * 		X producers, Y consumers where X,Y > 0
+ */
 typedef struct {
 	Item *buffer;
 	int	buffer_len;
 	pthread_mutex_t mutex;
 } SyncBuffer;
-
-//void pop_buffer(struct *SyncBuffer buf);
-
-//void push_buffer(struct *SyncBuffer buf);
 
 void produce_item();
 

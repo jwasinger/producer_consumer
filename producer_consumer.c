@@ -7,7 +7,9 @@ void fatal_error(char *error_str) {
 	exit(-1);
 }
 
-
+/*
+ * Wrapper around inline x86 asm to check hardware support for RDRAND
+ */
 int get_rdrand_support() {
 	unsigned int eax;
 	unsigned int ebx;
@@ -34,6 +36,9 @@ int get_rdrand_support() {
 
 /*
  * TODO: make threadsafe
+ *
+ * Fail if provided return value is not 0 and print a message about the error.
+ *
  */
 void capture_error(int ret) {
 	if(ret != 0) {
@@ -50,6 +55,9 @@ void fail_if_error(int ret) {
 	}
 }
 
+/*
+ * SyncBuffer Init function
+ */
 int init_sync_buffer(SyncBuffer** rw_buf) {
 	int ret = 0;
 
@@ -74,18 +82,26 @@ int init_sync_buffer(SyncBuffer** rw_buf) {
 	return 0;
 }
 
-void pop_buffer(SyncBuffer* buf) {
+int pop_buffer(SyncBuffer* buf) {
 	int ret = 0;
 
 	if (buf->buffer_len == 0) {
-		return;
+		return 0;
 	}
 
 	ret = pthread_mutex_lock(&(buf->mutex));
+
+	//buffer has been modified by another thread while waiting for mutex to unlock
+	if (buf->buffer_len == 0) {
+		return 0;
+	}
+
 	
 	buf->buffer_len--;
 
-	ret = pthread_mutex_unlock(&(buf->mutex));
+	capture_error(pthread_mutex_unlock(&(buf->mutex)));
+
+	return 1;
 }
 
 void push_buffer(SyncBuffer* buf, Item *item) {
@@ -108,6 +124,10 @@ void push_buffer(SyncBuffer* buf, Item *item) {
 	}
 }
 
+/*
+ * Generate an item and push it onto the buffer.  If the buffer is full, block until an item
+ * is removed.  Then, add the new item
+ */
 void produce_item(SyncBuffer *buf) {
 	while(1) {
 		if (buf->buffer_len != BUF_MAX_LEN) {
@@ -123,13 +143,19 @@ void produce_item(SyncBuffer *buf) {
 	}
 }
 
+/*
+ * Consume the next item.  If the stack is empty, block until another item is added
+ * and then remove it
+ */
 void consume_item(SyncBuffer *buf) {
+	int ret = -1;
 	while(1) {
 		if (buf->buffer_len != 0) {
 			//remove an item from the buffer
-			pop_buffer(buf);
-
-			printf("item consumed\n");
+			ret = pop_buffer(buf);
+			if(ret == 1) {
+				printf("item consumed\n");
+			}
 
 			//decrement buffer length
 			pthread_mutex_unlock(&(buf->mutex));
@@ -145,6 +171,10 @@ Item gen_item() {
 	item.WaitTime = gen_rdrand();
 }
 
+/*
+ * generate a random 32bit integer using hardware-based rdrand
+ *
+ */
 int32_t gen_rdrand() {
 	if(get_rdrand_support() != 0) {
 		int result;
