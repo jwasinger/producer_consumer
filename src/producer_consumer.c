@@ -138,7 +138,7 @@ void produce_item(SyncBuffer *buf) {
 			Item item = gen_item();
 			push_buffer(buf, &item);
 
-			printf("item produced\n");
+			printf("item produced:%d\n", buf->buffer_len);
 		}
 	}
 }
@@ -154,7 +154,7 @@ void consume_item(SyncBuffer *buf) {
 			//remove an item from the buffer
 			ret = pop_buffer(buf);
 			if(ret == 1) {
-				printf("item consumed\n");
+				printf("item consumed:%d\n", buf->buffer_len);
 			}
 
 			//decrement buffer length
