@@ -63,10 +63,22 @@ This is a new paragraph.
 \emph{\textbf{\color{red}This is italicized and red}}
 
 \section*{Appendix 1: Source Code}
-\section{ Log of commands for Qemu }
-\section{Concurrency Problem Questions}
-\section{Version Control Log formatted}
-\section{Code Listing}
+\section*{ Log of commands for Qemu }
+\section*{Concurrency Problem Questions}
+
+\begin{enumerate}
+  \item{What do you think the main point of this assignment is?}\\
+  The purpose of this assignment was for us to familiarize ourselves with concurrent programming techniques using a problem that mimics real-world concurrent systems.
+  \item{How did you personally approach the problem? Design decisions, algorithm, etc.}\\
+  The description of the behavior from the assignment specification was enough information for me to create a simple multi-threaded buffer.
+  \item{How did you ensure your solution was correct? Testing details, for instance.}
+  Log output from the executable gives accurate information about the operations that happen (consume/produce) and the size of the buffer after each operation.  By reading log output and ensuring the output indicates that the operations being performed correctly.
+  \item{What did you learn?}
+  This assignment was great for re-familiarizing myself with POSIX compliant C multithreading mechanisms.
+\end{enumerate}
+\section*{Version Control Log}
+
+\section*{Code Listing}
 \lstset{language=C,
                 basicstyle=\ttfamily,
                 keywordstyle=\color{blue}\ttfamily,
@@ -99,10 +111,10 @@ int get_rdrand_support() {
 	eax = 0x01;
 
 	__asm__ __volatile__(
-	                     "cpuid;"
-	                     : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-	                     : "a"(eax)
-	                     );
+						 "cpuid;"
+						 : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+						 : "a"(eax)
+						 );
 	
 	if(ecx & 0x40000000){
 		return 1;
