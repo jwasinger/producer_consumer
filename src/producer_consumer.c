@@ -119,6 +119,8 @@ void push_buffer(SyncBuffer* buf, Item *item) {
 		buf->buffer[buf->buffer_len] = *item;
 		buf->buffer_len++;
 
+		printf("item produced:%d\n", buf->buffer_len);
+
 		capture_error(pthread_mutex_unlock(&(buf->mutex)));
 		break;
 	}
@@ -138,7 +140,7 @@ void produce_item(SyncBuffer *buf) {
 			Item item = gen_item();
 			push_buffer(buf, &item);
 
-			printf("item produced:%d\n", buf->buffer_len);
+
 		}
 	}
 }
