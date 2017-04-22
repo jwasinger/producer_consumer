@@ -22,7 +22,7 @@
 \newcommand{\cred}[1]{{\color{red}#1}}
 \newcommand{\cblue}[1]{{\color{blue}#1}}
 
-\newcommand{\toc}{\tableofcontents}
+%\newcommand{\toc}{\tableofcontents}
 
 \title{CS 444 Assignment 1}
 \author{Jared Wasinger, Soo-Min Yoo}
@@ -34,6 +34,7 @@
 \begin{document}
 
 \maketitle
+
 \begin{abstract}
 	This is an abstract
 \end{abstract}
@@ -41,44 +42,115 @@
 
 \tableofcontents
 
+\newpage
+
 %input the pygmentized output of mt19937ar.c, using a (hopefully) unique name
 %this file only exists at compile time. Feel free to change that.
 
 
-\section{Section 1}
-\subsection{blah}
-\subsubsection{yada yada}
-This is a paragraph in \LaTeX.
+\section{Log of commands for Qemu}
 
-This is a new paragraph.
+
+\textbf{open two terminal windows in terminal \#1:}\\
+  cd /scratch/spring/2017/\\
+  mkdir 14-05\\
+  cd 14-05\\
+  git clone git://git.yoctoproject.org/linux-yocto-3.14\\
+  cd linux-yocto-3.14\\
+  git checkout v3.14.26\\
+  configure environment with this command: source /scratch/opt/environment-setup-i586-poky-linux.ocsh\\
+  cp /scratch/spring2017/files/config-3.14.26-yocto-qemu .config\\
+  make menuconfig\\
+  press / and type in LOCALVERSION, press enter\\
+  hit 1, press enter, edit value to -14-05-hw1\\
+  make -j4 all\\
+  cd ../\\
+  run gdb\\
+
+\textbf{in terminal \#2:}\\
+  cd /scratch/spring/2017/14-05\\
+  cp /scratch/spring2017/files/bzImage-qemux86.bin . and cp /scratch/spring2017/files/core-image-lsb-sdk-qemux86.ext3 .\\
+  run qemu with: qemu-system-i386 -gdb tcp::5645 -S -nographic -kernel bzImage-qemux86.bin -drive file=core-image-lsb-sdk-qemux86.ext3,if=virtio -enable-kvm -net none -usb -localtime --no-reboot --append "root=/dev/vda rw console=ttyS0 debug"\\
+
+\textbf{back in terminal \#1 in gdb:}\\
+  target remote :5645\\
+  continue\\
+  you'll be asked for qemu login: type in root, enter\\
+  type uname -a to see kernel name\\
+  reboot\\
+
+\textbf{in terminal \#2:}
+  run qemu again with the following (note that it's different from the one before!):\\
+    qemu-system-i386 -gdb tcp::5645 -S -nographic -kernel linux-yocto-3.14/arch/x86/boot/bzImage -drive file=core-image-lsb-sdk-qemux86.ext3,if=virtio -enable-kvm -net none -usb -localtime --no-reboot --append "root=/dev/vda rw console=ttyS0 debug"\\
+  
+\textbf{in terminal \#1 in gdb:}\\
+  target remote :5645\\
+  continue\\
+  qemu login: type in root, enter\\
+  type uname -a to see kernel name, which now has -14-05-hw1 appended to the end\\
+  reboot\\
+
+\section{Explanation of Qemu Flags}
 
 \begin{itemize}
-\item \begin{equation}
-    \label{eq1}
-    \int_0^\pi \sin(x) \partial x
-    \end{equation}
-\item $\backslash$ As seen in Eq. \ref{eq1}, blah blah blah
+\item{\textbf{-gdb tcp::???? }}\\
+open a gdbserver on TCP port ????\\
+
+\item{\textbf{-S }}\\
+Do not start CPU at startup (you must type ’c’ in the monitor).\\
+
+\item{\textbf{-nographic }}\\
+Normally, QEMU uses SDL to display the VGA output. With this option, you can totally disable graphical output so that QEMU is a simple command line application. The emulated serial port is redirected on the console and muxed with the monitor (unless redirected elsewhere explicitly). Therefore, you can still use QEMU to debug a Linux kernel with a serial console. Use C-a h for help on switching between the console and monitor.\\
+
+\item{\textbf{-kernel bzImage}}\\
+Use bzImage as kernel image. The kernel can be either a Linux kernel or in multiboot format.\\
+
+\item{\textbf{-drive file=core-image-lsb-sdk-qemux86.ext3,if=virtio }}\\
+specify drive file to open (?)\\
+
+\item{\textbf{-enable-kvm }}\\
+Enable KVM full virtualization support. This option is only available if KVM support is enabled when compiling.\\
+
+\item{\textbf{-net none}}\\
+Indicate that no network devices should be configured. It is used to override the default configuration (-net nic -net user) which is activated if no -net options are provided.\\
+
+\item{\textbf{-usb}}\\
+Enable the USB driver\\
+
+\item{\textbf{-localtime}}\\
+Set the real time clock to local time (?)\\
+
+\item{\textbf{--no-reboot}}\\
+Exit instead of rebooting.
+
+\item{\textbf{--append cmdLine}}\\
+Use cmdLine as kernel command line\\
+
 \end{itemize}
-
-\emph{\textbf{\color{red}This is italicized and red}}
-
-\section*{Appendix 1: Source Code}
-\section*{ Log of commands for Qemu }
-\section*{Concurrency Problem Questions}
+\section{Concurrency Problem Questions}
 
 \begin{enumerate}
-  \item{What do you think the main point of this assignment is?}\\
-  The purpose of this assignment was for us to familiarize ourselves with concurrent programming techniques using a problem that mimics real-world concurrent systems.
-  \item{How did you personally approach the problem? Design decisions, algorithm, etc.}\\
+  \item{\textbf{What do you think the main point of this assignment is?}}\\
+  The purpose of this assignment was for us to familiarize ourselves with concurrent programming techniques using a problem that mimics real-world concurrent systems.\\
+  \item{\textbf{How did you personally approach the problem? Design decisions, algorithm, etc.}}\\
   The description of the behavior from the assignment specification was enough information for me to create a simple multi-threaded buffer.
-  \item{How did you ensure your solution was correct? Testing details, for instance.}
-  Log output from the executable gives accurate information about the operations that happen (consume/produce) and the size of the buffer after each operation.  By reading log output and ensuring the output indicates that the operations being performed correctly.
-  \item{What did you learn?}
-  This assignment was great for re-familiarizing myself with POSIX compliant C multithreading mechanisms.
+  \item{\textbf{How did you ensure your solution was correct? Testing details, for instance.}}
+  Log output from the executable gives accurate information about the operations that happen (consume/produce) and the size of the buffer after each operation.  By reading log output and ensuring the output indicates that the operations being performed correctly.\\
+  \item{\textbf{What did you learn?}}\\
+  This assignment was great for re-familiarizing myself with POSIX compliant C multithreading mechanisms.\\
 \end{enumerate}
-\section*{Version Control Log}
+\section{Version Control Log}
 
-\section*{Code Listing}
+
+\section{Work Log}
+\begin{itemize}
+  \item{Designing and building solution for producer/consumer problem in C - Completed by Jared Wasinger 4/16}
+  \item{Building the VM, documenting the commands - Completed by Soo-min Yoo 4/19}
+  \item{LaTex Writeup and Assignment submission - Completed by Jared Wasinger 4/21}
+\end{itemize}
+
+\section{Code Listing}
+\subsection{producer\_consumer.h}
 \lstset{language=C,
                 basicstyle=\ttfamily,
                 keywordstyle=\color{blue}\ttfamily,
@@ -86,6 +158,56 @@ This is a new paragraph.
                 commentstyle=\color{green}\ttfamily,
                 morecomment=[l][\color{magenta}]{\#}
 }
+
+\begin{lstlisting}
+#ifndef PRODUCER_CONSUMER_H
+#define PRODUCER_CONSUMER_H
+
+#define BUF_MAX_LEN 30
+
+#include<stdio.h>
+#include<unistd.h>
+#include<stdlib.h>
+#include<pthread.h>
+#include<errno.h>
+#include<stdint.h>
+#include<x86intrin.h>
+
+#include "genrand.h"
+
+typedef struct {
+  int Id;
+  int WaitTime;
+} Item;
+
+/*
+ * SyncBuffer is a structure which implements the functionality of a threadsafe stack in the context of the producer consumer problem:
+ *    X producers, Y consumers where X,Y > 0
+ */
+typedef struct {
+  Item *buffer;
+  int buffer_len;
+  pthread_mutex_t mutex;
+} SyncBuffer;
+
+void produce_item();
+
+void consume_item();
+
+int init_sync_buffer(SyncBuffer** rw_buf);
+
+int32_t gen_rdrand();
+
+Item gen_item();
+
+void capture_error(int ret);
+
+#endif
+
+\end{lstlisting}
+\newpage
+
+\subsection{producer\_consumer.c}
 
 \begin{lstlisting}
 #include "producer_consumer.h"
@@ -275,5 +397,170 @@ int32_t gen_rdrand() {
 	}
 }
 \end{lstlisting}
+\newpage
+
+\subsection{genrand.h}
+\begin{lstlisting}
+#ifndef GENRAND_H
+#define GENRAND_H
+
+#include <stdio.h>
+
+/* Period parameters */
+#define N 624
+#define M 397
+#define MATRIX_A 0x9908b0dfUL   /* constant vector a */
+#define UPPER_MASK 0x80000000UL /* most significant w-r bits */
+#define LOWER_MASK 0x7fffffffUL /* least significant r bits */
+
+unsigned long genrand_int32(void);
+
+void init_genrand(unsigned long s);
+
+#endif
+
+\end{lstlisting}
+\newpage
+
+\subsection{genrand.c}
+\begin{lstlisting}
+#include "genrand.h"
+
+static unsigned long mt[N]; /* the array for the state vector  */
+static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
+
+/* generates a random number on [0,0xffffffff]-interval */
+unsigned long genrand_int32(void)
+{
+  unsigned long y;
+  static unsigned long mag01[2]={0x0UL, MATRIX_A};
+  /* mag01[x] = x * MATRIX_A  for x=0,1 */
+
+  if (mti >= N) { /* generate N words at one time */
+    int kk;
+
+    if (mti == N+1)   /* if init_genrand() has not been called, */
+      init_genrand(5489UL); /* a default initial seed is used */
+
+    for (kk=0;kk<N-M;kk++) {
+      y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+      mt[kk] = mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1UL];
+    }
+    for (;kk<N-1;kk++) {
+      y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+      mt[kk] = mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1UL];
+    }
+    y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
+    mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
+
+    mti = 0;
+  }
+
+  y = mt[mti++];
+
+  /* Tempering */
+  y ^= (y >> 11);
+  y ^= (y << 7) & 0x9d2c5680UL;
+  y ^= (y << 15) & 0xefc60000UL;
+  y ^= (y >> 18);
+
+  return y;
+}
+
+/* initializes mt[N] with a seed */
+void init_genrand(unsigned long s)
+{
+  mt[0]= s & 0xffffffffUL;
+  for (mti=1; mti<N; mti++) {
+    mt[mti] =
+      (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti);
+    /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+    /* In the previous versions, MSBs of the seed affect   */
+    /* only MSBs of the array mt[].                        */
+    /* 2002/01/09 modified by Makoto Matsumoto             */
+    mt[mti] &= 0xffffffffUL;
+    /* for >32 bit machines */
+  }
+}
+
+\end{lstlisting}
+\newpage
+
+\subsection{main.c}
+\begin{lstlisting}
+#include<stdio.h>
+#include<unistd.h>
+#include<stdlib.h>
+#include<pthread.h>
+#include<getopt.h>
+
+#include "producer_consumer.h"
+
+void *consumer_main(void *sync_buf) {
+  while(1) {
+    consume_item((SyncBuffer *)sync_buf);
+  }
+}
+
+void *producer_main(void *sync_buf) {
+  while(1) {
+    produce_item((SyncBuffer *)sync_buf);
+  }
+}
+
+int main(int argc, char **argv) {
+  SyncBuffer *sync_buf = NULL;
+  int num_consumers, num_producers, arg;
+  num_consumers = num_producers = arg = -1;
+  pthread_t *consumers = NULL;
+  pthread_t *producers = NULL;
+
+  while((arg = getopt(argc, argv, "c:p:")) != -1) {
+    switch(arg) {
+      case 'c':
+        num_producers = atoi(optarg);
+        break;
+      case 'p':
+        num_consumers = atoi(optarg);
+        break;
+    }
+  }
+
+  if(num_consumers == -1 || num_producers == -1 || num_producers <= 0 || num_consumers <= 0) {
+    printf("Argument error...\n");
+    exit(-1);
+  }
+
+  capture_error(init_sync_buffer(&sync_buf));
+
+  consumers = malloc(sizeof(pthread_t) * num_consumers);
+  producers = malloc(sizeof(pthread_t) * num_producers);
+
+  for(int i = 0; i < num_producers; i++) {
+    capture_error(pthread_create(producers + i,
+            NULL,
+            producer_main,
+            sync_buf));
+  }
+  
+  for(int i = 0; i < num_producers; i++) {
+    capture_error(pthread_create(consumers + i,
+            NULL,
+            consumer_main,
+            sync_buf));
+  }
+
+  for(int i = 0; i < num_producers; i++) {
+    pthread_join(producers[i], NULL);
+  }
+
+  for(int i = 0; i < num_consumers; i++) {
+    pthread_join(consumers[i], NULL);
+  }
+
+  return 0;
+}
+\end{lstlisting}
+\newpage
 
 \end{document}

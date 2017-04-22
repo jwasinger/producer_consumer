@@ -1,2 +1,2 @@
 all:
-	pdflatex writeup.tex
+	rm -f writeup.pdf && pdflatex writeup.tex
