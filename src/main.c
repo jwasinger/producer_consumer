@@ -41,6 +41,12 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
+	if (get_rdrand_support() == 1) {
+		printf("rdrand supported\n");
+	} else {
+		printf("rdrand supported\n");
+	}
+
 	capture_error(init_sync_buffer(&sync_buf));
 
 	consumers = malloc(sizeof(pthread_t) * num_consumers);
